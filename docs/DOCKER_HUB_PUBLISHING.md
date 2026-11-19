@@ -199,6 +199,16 @@ Source repo: <https://github.com/nowo-tech/docker-frankenphp>.
 
 ## 9. Check on Docker Hub
 
+First publish (2026-11-19, `make push`, amd64):
+
+| Tag | Compressed | Digest |
+|-----|-----------:|--------|
+| `nowotech/frankenphp:1.13.5-php8.5.13-alpine` | 92 MB | `sha256:956c1fb7b224…` |
+| `nowotech/frankenphp:1.13.5-php8.5.13-alpine-symfony` | 116 MB | `sha256:0bbb18d79664…` |
+
+Smoke test before the push: `FrankenPHP 1.13.5 PHP 8.5.13 Caddy v2.11.9`, Alpine 3.24.4, `HTTP 200`;
+Symfony tag with the 9 extensions and Composer 2.11.2.
+
 1. Open `https://hub.docker.com/r/<username>/frankenphp/tags`.
 2. Each tag shows its **OS/ARCH** (one row, or two with multi-arch) and the compressed size.
 3. From any machine, without logging in:
