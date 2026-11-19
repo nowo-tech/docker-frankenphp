@@ -1,0 +1,108 @@
+name: build
+
+# PRs and main: build + smoke test (amd64, no push).
+# Tags v* and manual runs: build on native amd64 and arm64 runners, push by digest, then merge the manifests.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: github.ref_type != 'tag' && github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: make build test DOCKERHUB_USER=ci
+
+  build:
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push by digest
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          DOCKERHUB_USER: ${{ vars.DOCKERHUB_USER }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          set -a; . ./versions.env; set +a
+          DOCKERHUB_USER="${{ vars.DOCKERHUB_USER }}"
+          IMAGE="docker.io/${DOCKERHUB_USER}/${IMAGE_NAME}"
+          make fetch
+          if [ "$OS" = alpine ]; then DF=.upstream/frankenphp/alpine.Dockerfile; else DF=.upstream/frankenphp/Dockerfile; fi
+          out="type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true"
+
+          docker buildx build .upstream/frankenphp -f "$DF" --target runner --platform "$PLATFORM" \
+            --build-context php-base=docker-image://php:${PHP_VERSION}-zts-${OS} \
+            --build-context golang-base=docker-image://golang:${GO_VERSION}-${OS} \
+            --build-arg FRANKENPHP_VERSION=${FRANKENPHP_VERSION} \
+            --secret id=github-token,env=GITHUB_TOKEN \
+            --output "$out" --metadata-file base.json
+          base=$(jq -r '."containerimage.digest"' base.json)
+
+          docker buildx build symfony --platform "$PLATFORM" \
+            --build-arg BASE_IMAGE="${IMAGE}@${base}" \
+            --output "$out" --metadata-file symfony.json
+          symfony=$(jq -r '."containerimage.digest"' symfony.json)
+
+          arch=${PLATFORM#linux/}
+          mkdir -p digests
+          echo "$base" > "digests/base-$arch"
+          echo "$symfony" > "digests/symfony-$arch"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ strategy.job-index }}
+          path: digests/*
+          retention-days: 1
+
+  merge:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digests-*
+          path: digests
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create multi-arch tags
+        run: |
+          set -eu
+          set -a; . ./versions.env; set +a
+          IMAGE="docker.io/${{ vars.DOCKERHUB_USER }}/${IMAGE_NAME}"
+          TAG="${FRANKENPHP_VERSION}-php${PHP_VERSION}-${OS}"
+          refs() { for f in digests/$1-*; do printf '%s@%s ' "$IMAGE" "$(cat "$f")"; done; }
+          extra=""
+          if [ "$OS" = trixie ]; then extra="-t ${IMAGE}:${FRANKENPHP_VERSION}-php${PHP_VERSION}"; fi
+          docker buildx imagetools create -t "${IMAGE}:${TAG}" $extra $(refs base)
+          docker buildx imagetools create -t "${IMAGE}:${TAG}-symfony" $(refs symfony)
+          docker buildx imagetools inspect "${IMAGE}:${TAG}"
+          docker buildx imagetools inspect "${IMAGE}:${TAG}-symfony"
