@@ -59,6 +59,8 @@ jobs:
             --build-context php-base=docker-image://php:${PHP_VERSION}-zts-${OS} \
             --build-context golang-base=docker-image://golang:${GO_VERSION}-${OS} \
             --build-arg FRANKENPHP_VERSION=${FRANKENPHP_VERSION} \
+            --label org.opencontainers.image.version=v${FRANKENPHP_VERSION} \
+            --label org.opencontainers.image.revision=${FRANKENPHP_COMMIT} \
             --secret id=github-token,env=GITHUB_TOKEN \
             --output "$out" --metadata-file base.json
           base=$(jq -r '."containerimage.digest"' base.json)

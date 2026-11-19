@@ -22,6 +22,11 @@ else
 DOCKERFILE   := $(UPSTREAM_DIR)/Dockerfile
 endif
 
+# Same OCI labels upstream docker-bake.hcl sets on its images
+OCI_LABELS := \
+	--label org.opencontainers.image.version=v$(FRANKENPHP_VERSION) \
+	--label org.opencontainers.image.revision=$(FRANKENPHP_COMMIT)
+
 BASE_CONTEXTS := \
 	--build-context php-base=docker-image://php:$(PHP_VERSION)-zts-$(OS) \
 	--build-context golang-base=docker-image://golang:$(GO_VERSION)-$(OS)
@@ -43,7 +48,7 @@ build: build-base build-symfony ## Build both images for the local platform
 
 build-base: fetch ## Build the base image (same as dunglas/frankenphp, newer PHP)
 	docker buildx build $(UPSTREAM_DIR) -f $(DOCKERFILE) --target runner \
-		$(BASE_CONTEXTS) --build-arg FRANKENPHP_VERSION=$(FRANKENPHP_VERSION) \
+		$(BASE_CONTEXTS) $(OCI_LABELS) --build-arg FRANKENPHP_VERSION=$(FRANKENPHP_VERSION) \
 		$(BASE_TAGS) --load
 
 build-symfony: ## Build the Symfony variant on top of the base image
@@ -62,7 +67,7 @@ push: ## Push every local tag of IMAGE (local platform only)
 
 push-multiarch: fetch ## Build and push for PLATFORMS (slow on emulated arches)
 	docker buildx build $(UPSTREAM_DIR) -f $(DOCKERFILE) --target runner \
-		$(BASE_CONTEXTS) --build-arg FRANKENPHP_VERSION=$(FRANKENPHP_VERSION) \
+		$(BASE_CONTEXTS) $(OCI_LABELS) --build-arg FRANKENPHP_VERSION=$(FRANKENPHP_VERSION) \
 		--platform $(PLATFORMS) $(BASE_TAGS) --push
 	docker buildx build symfony --build-arg BASE_IMAGE=$(IMAGE):$(TAG) \
 		--platform $(PLATFORMS) $(SYMFONY_TAGS) --push
