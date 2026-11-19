@@ -205,6 +205,10 @@ First publish (2026-11-19, `make push`, amd64):
 |-----|-----------:|--------|
 | `nowotech/frankenphp:1.13.5-php8.5.13-alpine` | 92 MB | `sha256:956c1fb7b224…` |
 | `nowotech/frankenphp:1.13.5-php8.5.13-alpine-symfony` | 116 MB | `sha256:0bbb18d79664…` |
+| `nowotech/frankenphp:1.13.5-php8.5.13` (= `-trixie`) | 222 MB | `sha256:725f910847d6…` |
+
+The trixie tags were built with `make build-base OS=trixie` and pushed with `docker push` per tag
+(Symfony Beacon pins `nowotech/frankenphp:1.13.5-php8.5.13@sha256:725f9108…`).
 
 Smoke test before the push: `FrankenPHP 1.13.5 PHP 8.5.13 Caddy v2.11.9`, Alpine 3.24.4, `HTTP 200`;
 Symfony tag with the 9 extensions and Composer 2.11.2.

@@ -23,6 +23,8 @@ is already out as `php:8.5.13-zts-alpine`, so this repo builds the image the sam
 
 | Tag | Content |
 |-----|---------|
+| `<user>/frankenphp:1.13.5-php8.5.13` | Debian trixie base, same as upstream `1.13.5-php8.5.12` (`make build OS=trixie`) |
+| `<user>/frankenphp:1.13.5-php8.5.13-trixie` | Same image, explicit OS tag |
 | `<user>/frankenphp:1.13.5-php8.5.13-alpine` | Base image, same as upstream alpine |
 | `<user>/frankenphp:1.13.5-php8.5.13-alpine-symfony` | Base + apcu, bcmath, gd, intl, opcache, pdo_mysql, pdo_pgsql, redis, zip + Composer 2 |
 
