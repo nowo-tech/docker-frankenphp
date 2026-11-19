@@ -1,5 +1,13 @@
 # docker-frankenphp
 
+> [!IMPORTANT]
+> **Temporary image.** It only exists to ship PHP versions that the official
+> [`dunglas/frankenphp`](https://hub.docker.com/r/dunglas/frankenphp) image has not published yet.
+> **If the same tag exists on `dunglas/frankenphp`, use the official image instead**
+> (for example `dunglas/frankenphp:1.13.5-php8.5.13-alpine` once it is out).
+> This repo builds from the same upstream Dockerfile, but it is not an official FrankenPHP release
+> and tags are not kept once upstream catches up.
+
 FrankenPHP **1.13.5** on PHP **8.5.13** (**Alpine**), published on Docker Hub.
 
 Upstream `dunglas/frankenphp` stops at `1.13.5-php8.5.12-alpine`. PHP 8.5.13 (security release, 2026-11-19)
