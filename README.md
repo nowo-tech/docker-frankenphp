@@ -6,7 +6,7 @@
 > **If the same tag exists on `dunglas/frankenphp`, use the official image instead**
 > (for example `dunglas/frankenphp:1.13.5-php8.5.13-alpine` once it is out).
 > This repo builds from the same upstream Dockerfile, but it is not an official FrankenPHP release
-> and tags are not kept once upstream catches up.
+> and it gets no updates once upstream catches up.
 
 FrankenPHP **1.13.5** on PHP **8.5.13** (**Alpine**), published on Docker Hub.
 
